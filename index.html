@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍉 Watermelon Clicker</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green-dark: #1a4a1a;
+  --green-mid: #2d7a2d;
+  --green-light: #4caf50;
+  --green-bright: #76d975;
+  --red: #e8453c;
+  --red-light: #ff6b6b;
+  --pink: #ff8fa3;
+  --white: #f9fff9;
+  --seed: #1a1a0a;
+  --panel: rgba(20,50,20,0.92);
+  --border: #2d7a2d;
+  --gold: #ffd700;
+  --text: #e8ffe8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body {
+  background: var(--green-dark);
+  font-family: 'Nunito', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(76,175,80,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(232,69,60,0.06) 0%, transparent 60%);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:#0d2b0d;}
+::-webkit-scrollbar-thumb{background:#2d7a2d;border-radius:3px;}
+
+/* ── LAYOUT ── */
+#app { display:flex; height:100vh; }
+
+/* LEFT PANEL */
+#left {
+  width:220px; min-width:220px;
+  background: linear-gradient(180deg, #0d2b0d 0%, #0a1f0a 100%);
+  border-right: 2px solid var(--border);
+  display:flex; flex-direction:column; align-items:center;
+  padding: 16px 10px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+#game-title {
+  font-family:'Fredoka One',cursive;
+  font-size:1.5rem;
+  color: var(--green-bright);
+  text-shadow: 0 0 12px rgba(118,217,117,0.5), 2px 2px 0 #0d2b0d;
+  letter-spacing:0.05em;
+  text-align:center;
+  line-height:1.2;
+  margin-bottom:14px;
+}
+
+/* Watermelon counter */
+#wm-count-wrap {
+  width:100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius:8px;
+  padding:10px;
+  text-align:center;
+  margin-bottom:8px;
+}
+#wm-count {
+  font-family:'Fredoka One',cursive;
+  font-size:1.8rem;
+  color:var(--white);
+  text-shadow:1px 1px 0 #0d2b0d;
+  line-height:1;
+}
+#wm-label { font-size:0.7rem; color:#76d975; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
+#wm-per-sec { font-size:0.72rem; color:#aaa; margin-top:4px; }
+#wm-per-click-label { font-size:0.7rem; color:#888; }
+
+/* Big Watermelon */
+#melon-wrap {
+  position:relative;
+  margin:16px 0 8px;
+  cursor:pointer;
+  user-select:none;
+  flex-shrink:0;
+}
+#melon {
+  width:148px; height:148px;
+  transition: transform 0.08s;
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,0.5));
+}
+#melon:active, #melon.clicked { transform: scale(0.91); }
+#melon:hover { filter: drop-shadow(0 6px 24px rgba(118,217,117,0.4)) drop-shadow(0 6px 18px rgba(0,0,0,0.5)); }
+
+/* Stats */
+#stats-box {
+  width:100%;
+  background:rgba(0,0,0,0.25);
+  border:1px solid #1a4a1a;
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:0.7rem;
+  color:#888;
+  line-height:2;
+  margin-top:8px;
+}
+#stats-box span { color:#aaffaa; }
+
+/* Milestones */
+#milestones {
+  width:100%;
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.milestone {
+  background:rgba(0,0,0,0.3);
+  border:1px solid #1a4a1a;
+  border-radius:6px;
+  padding:5px 8px;
+  font-size:0.65rem;
+  color:#555;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  transition:all 0.3s;
+}
+.milestone.unlocked { color:#76d975; border-color:#2d7a2d; background:rgba(45,122,45,0.15); }
+.milestone .mi-icon { font-size:1rem; }
+
+/* CENTER */
+#center {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding:20px 10px;
+  overflow-y:auto;
+  position:relative;
+}
+
+/* Floating +1 text */
+.float-text {
+  position:fixed;
+  font-family:'Fredoka One',cursive;
+  font-size:1.2rem;
+  color:#76d975;
+  text-shadow:1px 1px 0 #0d2b0d, 0 0 8px rgba(118,217,117,0.5);
+  pointer-events:none;
+  z-index:999;
+  animation: floatUp 0.9s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity:1; transform:translateY(0) scale(1); }
+  80% { opacity:0.8; }
+  100% { opacity:0; transform:translateY(-80px) scale(0.7); }
+}
+
+/* NEWS TICKER */
+#news-bar {
+  width:100%;
+  background:#0a1f0a;
+  border:1px solid #1a4a1a;
+  border-radius:6px;
+  padding:6px 12px;
+  font-size:0.72rem;
+  color:#4caf50;
+  overflow:hidden;
+  white-space:nowrap;
+  margin-bottom:16px;
+}
+#news-text { display:inline-block; animation:ticker 20s linear infinite; }
+@keyframes ticker { 0%{transform:translateX(100%)} 100%{transform:translateX(-100%)} }
+
+/* UPGRADES */
+#upgrades-section {
+  width:100%;
+  max-width:520px;
+  margin-bottom:20px;
+}
+#upgrades-title {
+  font-family:'Fredoka One',cursive;
+  font-size:1rem;
+  color:var(--gold);
+  text-shadow:0 0 8px rgba(255,215,0,0.3);
+  margin-bottom:8px;
+  letter-spacing:0.05em;
+}
+#upgrades-grid {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.upgrade-btn {
+  width:52px; height:52px;
+  background:rgba(0,0,0,0.5);
+  border:2px solid #1a4a1a;
+  border-radius:8px;
+  font-size:1.5rem;
+  cursor:pointer;
+  transition:all 0.15s;
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.upgrade-btn:hover { border-color:var(--gold); background:rgba(255,215,0,0.1); transform:scale(1.08); }
+.upgrade-btn.affordable { border-color:var(--gold); box-shadow:0 0 8px rgba(255,215,0,0.3); }
+.upgrade-btn.bought { opacity:0.35; cursor:default; border-color:#1a4a1a; }
+.upgrade-btn .tooltip {
+  display:none;
+  position:absolute;
+  bottom:calc(100% + 6px);
+  left:50%; transform:translateX(-50%);
+  background:#0a1a0a;
+  border:1px solid var(--gold);
+  border-radius:6px;
+  padding:8px 10px;
+  font-size:0.68rem;
+  white-space:nowrap;
+  color:var(--text);
+  z-index:100;
+  min-width:160px;
+  text-align:left;
+  pointer-events:none;
+  line-height:1.6;
+}
+.upgrade-btn:hover .tooltip { display:block; }
+.upgrade-btn .tooltip b { color:var(--gold); font-size:0.72rem; }
+
+/* RIGHT PANEL - BUILDINGS */
+#right {
+  width:320px; min-width:280px;
+  background: linear-gradient(180deg, #0d2b0d 0%, #0a1f0a 100%);
+  border-left: 2px solid var(--border);
+  overflow-y: auto;
+  padding: 12px 0;
+}
+#buildings-title {
+  font-family:'Fredoka One',cursive;
+  font-size:1.1rem;
+  color:var(--green-bright);
+  padding:0 14px 10px;
+  border-bottom:1px solid #1a4a1a;
+  display:flex; align-items:center; gap:8px;
+}
+
+.building {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 14px;
+  border-bottom:1px solid #0d2b0d;
+  cursor:pointer;
+  transition:background 0.15s;
+  position:relative;
+}
+.building:hover { background:rgba(45,122,45,0.18); }
+.building.affordable { background:rgba(45,122,45,0.1); }
+.building.affordable:hover { background:rgba(45,122,45,0.25); }
+.building.cant-afford { opacity:0.55; }
+.building .b-icon { font-size:2rem; flex-shrink:0; width:40px; text-align:center; }
+.building .b-info { flex:1; min-width:0; }
+.building .b-name { font-size:0.8rem; font-weight:700; color:var(--green-bright); }
+.building .b-desc { font-size:0.62rem; color:#666; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.building .b-cost { font-size:0.72rem; color:var(--gold); font-weight:700; display:flex; align-items:center; gap:3px; }
+.building .b-owned {
+  font-family:'Fredoka One',cursive;
+  font-size:1.4rem;
+  color:var(--text);
+  min-width:32px;
+  text-align:right;
+  flex-shrink:0;
+}
+.building .b-cps { font-size:0.6rem; color:#555; }
+
+/* Building tooltip */
+.building .b-tooltip {
+  display:none;
+  position:fixed;
+  background:#0a1a0a;
+  border:1px solid var(--green-mid);
+  border-radius:8px;
+  padding:10px 14px;
+  font-size:0.72rem;
+  color:var(--text);
+  z-index:200;
+  max-width:220px;
+  pointer-events:none;
+  line-height:1.7;
+}
+.building:hover .b-tooltip { display:block; left:auto; right:330px; top:50%; transform:translateY(-50%); }
+
+/* Achievements bar */
+#achievements-bar {
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  padding:10px 14px;
+  border-top:1px solid #1a4a1a;
+  margin-top:auto;
+}
+.ach {
+  width:32px; height:32px;
+  background:rgba(0,0,0,0.4);
+  border:1px solid #1a4a1a;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem;
+  opacity:0.25;
+  transition:all 0.3s;
+  cursor:default;
+  position:relative;
+}
+.ach.earned { opacity:1; border-color:var(--gold); box-shadow:0 0 8px rgba(255,215,0,0.3); }
+.ach .ach-tip {
+  display:none;
+  position:absolute;
+  bottom:calc(100% + 4px);
+  left:50%; transform:translateX(-50%);
+  background:#0a1a0a;
+  border:1px solid var(--gold);
+  border-radius:6px;
+  padding:6px 10px;
+  font-size:0.65rem;
+  white-space:nowrap;
+  color:var(--text);
+  z-index:100;
+  pointer-events:none;
+}
+.ach:hover .ach-tip { display:block; }
+
+/* BIG NUMBER FORMAT colors */
+.n-trillion { color:#ff8fa3; }
+.n-billion  { color:#ffd700; }
+
+/* Melon rain canvas */
+#melon-canvas {
+  position:fixed; inset:0; pointer-events:none; z-index:50;
+}
+
+/* Toast notification */
+#toast {
+  position:fixed; top:20px; left:50%; transform:translateX(-50%);
+  background:#0a2a0a; border:2px solid var(--green-mid);
+  border-radius:8px; padding:10px 20px;
+  font-family:'Fredoka One',cursive; font-size:1rem;
+  color:var(--green-bright); z-index:500;
+  opacity:0; transition:opacity 0.3s;
+  text-align:center; pointer-events:none;
+  text-shadow:0 0 8px rgba(118,217,117,0.4);
+}
+</style>
+</head>
+<body>
+
+<canvas id="melon-canvas"></canvas>
+<div id="toast"></div>
+
+<div id="app">
+
+<!-- LEFT -->
+<div id="left">
+  <div id="game-title">🍉 Watermelon<br>Clicker</div>
+
+  <div id="wm-count-wrap">
+    <div id="wm-count">0</div>
+    <div id="wm-label">watermelons</div>
+    <div id="wm-per-sec">0 per second</div>
+    <div id="wm-per-click-label">0 per click</div>
+  </div>
+
+  <div id="melon-wrap">
+    <svg id="melon" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="mg" cx="40%" cy="35%">
+          <stop offset="0%" stop-color="#ff8fa3"/>
+          <stop offset="60%" stop-color="#e8453c"/>
+          <stop offset="100%" stop-color="#c0392b"/>
+        </radialGradient>
+        <radialGradient id="sg" cx="40%" cy="35%">
+          <stop offset="0%" stop-color="#76d975"/>
+          <stop offset="70%" stop-color="#2d7a2d"/>
+          <stop offset="100%" stop-color="#1a4a1a"/>
+        </radialGradient>
+        <clipPath id="mc"><circle cx="100" cy="110" r="86"/></clipPath>
+      </defs>
+      <!-- outer rind -->
+      <circle cx="100" cy="110" r="86" fill="url(#sg)"/>
+      <!-- rind stripes -->
+      <path d="M100 24 Q120 60 108 110 Q100 80 100 24Z" fill="#1a4a1a" opacity="0.5"/>
+      <path d="M100 24 Q80 60 92 110 Q100 80 100 24Z" fill="#4caf50" opacity="0.3"/>
+      <path d="M186 110 Q160 90 110 108 Q150 100 186 110Z" fill="#1a4a1a" opacity="0.4"/>
+      <path d="M14 110 Q40 90 90 108 Q50 100 14 110Z" fill="#4caf50" opacity="0.3"/>
+      <!-- white rind inner -->
+      <circle cx="100" cy="110" r="76" fill="#e8ffe8" opacity="0.9"/>
+      <!-- flesh -->
+      <circle cx="100" cy="110" r="70" fill="url(#mg)"/>
+      <!-- flesh highlight -->
+      <ellipse cx="78" cy="85" rx="22" ry="14" fill="rgba(255,255,255,0.18)" transform="rotate(-20,78,85)"/>
+      <!-- seeds -->
+      <ellipse cx="82" cy="98" rx="5" ry="8" fill="#1a1a0a" transform="rotate(-15,82,98)"/>
+      <ellipse cx="115" cy="92" rx="5" ry="8" fill="#1a1a0a" transform="rotate(10,115,92)"/>
+      <ellipse cx="100" cy="118" rx="5" ry="8" fill="#1a1a0a" transform="rotate(5,100,118)"/>
+      <ellipse cx="75" cy="122" rx="4" ry="7" fill="#1a1a0a" transform="rotate(-20,75,122)"/>
+      <ellipse cx="125" cy="115" rx="4" ry="7" fill="#1a1a0a" transform="rotate(15,125,115)"/>
+      <ellipse cx="93" cy="138" rx="4" ry="7" fill="#1a1a0a" transform="rotate(-5,93,138)"/>
+      <!-- stem -->
+      <path d="M95 26 Q100 10 108 18" stroke="#1a4a1a" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M100 24 Q115 12 120 20" stroke="#2d7a2d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <div id="stats-box">
+    Total harvested: <span id="stat-total">0</span><br>
+    Clicked: <span id="stat-clicks">0</span> times<br>
+    Melons this run: <span id="stat-run">0</span><br>
+    Golden melons: <span id="stat-golden">0</span>
+  </div>
+
+  <div id="milestones">
+    <div style="font-size:0.65rem;color:#555;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Milestones</div>
+  </div>
+</div>
+
+<!-- CENTER -->
+<div id="center">
+  <div id="news-bar">
+    <span id="news-text">🍉 Breaking: Local farmer harvests 1 trillion watermelons · Scientists baffled by infinite melon supply · Watermelon currency replaces dollar · Melon prices crash globally · You can't stop clicking</span>
+  </div>
+
+  <div id="upgrades-section">
+    <div id="upgrades-title">🌟 Upgrades</div>
+    <div id="upgrades-grid"></div>
+  </div>
+
+  <div style="width:100%;max-width:520px;">
+    <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:var(--pink);margin-bottom:8px;">🏆 Achievements</div>
+    <div id="achievements-bar"></div>
+  </div>
+</div>
+
+<!-- RIGHT -->
+<div id="right">
+  <div id="buildings-title">🏭 Producers</div>
+  <div id="buildings-list"></div>
+</div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  WATERMELON CLICKER - Full Game Logic
+// ══════════════════════════════════════════════
+
+// ── SAVE/LOAD ──
+function save(){
+  localStorage.setItem('wmSave', JSON.stringify({
+    melons: game.melons,
+    totalMelons: game.totalMelons,
+    clicks: game.clicks,
+    goldenClicks: game.goldenClicks,
+    buildings: game.buildings.map(b=>({owned:b.owned})),
+    upgrades: game.upgrades.map(u=>({bought:u.bought})),
+    achievements: game.achievements.map(a=>({earned:a.earned})),
+  }));
+}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('wmSave'));
+    if(!d) return;
+    game.melons=d.melons||0;
+    game.totalMelons=d.totalMelons||0;
+    game.clicks=d.clicks||0;
+    game.goldenClicks=d.goldenClicks||0;
+    (d.buildings||[]).forEach((b,i)=>{ if(game.buildings[i]) game.buildings[i].owned=b.owned||0; });
+    (d.upgrades||[]).forEach((u,i)=>{ if(game.upgrades[i]) game.upgrades[i].bought=u.bought||false; });
+    (d.achievements||[]).forEach((a,i)=>{ if(game.achievements[i]) game.achievements[i].earned=a.earned||false; });
+  }catch(e){}
+}
+
+// ── GAME DATA ──
+const game = {
+  melons: 0,
+  totalMelons: 0,
+  clicks: 0,
+  goldenClicks: 0,
+  mpc: 1,   // melons per click
+  mps: 0,   // melons per second
+
+  buildings: [
+    { name:'Melon Seed',   icon:'🌱', baseCost:15,    baseCps:0.1,  owned:0, desc:'Tiny seeds sprouting tiny melons.' },
+    { name:'Melon Patch',  icon:'🪴', baseCost:100,   baseCps:0.5,  owned:0, desc:'A small patch of happy melons.' },
+    { name:'Melon Farm',   icon:'🌿', baseCost:500,   baseCps:4,    owned:0, desc:'An actual farm. Progress!' },
+    { name:'Melon Truck',  icon:'🚚', baseCost:2000,  baseCps:10,   owned:0, desc:'Delivers melons 24/7.' },
+    { name:'Melon Factory',icon:'🏭', baseCost:8000,  baseCps:40,   owned:0, desc:'Industrial-scale melon production.' },
+    { name:'Melon Lab',    icon:'🔬', baseCost:30000, baseCps:100,  owned:0, desc:'Scientists engineer super melons.' },
+    { name:'Melon Drone',  icon:'🚁', baseCost:100000,baseCps:400,  owned:0, desc:'Aerial melon extraction squadrons.' },
+    { name:'Melon Portal', icon:'🌀', baseCost:400000,baseCps:1600, owned:0, desc:'Pulls melons from alternate realities.' },
+    { name:'Melon Planet', icon:'🪐', baseCost:1500000,baseCps:6000,owned:0, desc:'An entire planet made of watermelon.' },
+    { name:'Melon Singularity',icon:'⚛️',baseCost:10000000,baseCps:50000,owned:0, desc:'The universe itself becomes melon.' },
+  ],
+
+  upgrades: [
+    // Click upgrades
+    { name:'Better Slicing',   icon:'🔪', cost:100,     bought:false, desc:'Sharper knives = more melon per click.',    type:'click',    mult:2  },
+    { name:'Power Grip',       icon:'💪', cost:500,     bought:false, desc:'You squeeze harder. +2x click power.',      type:'click',    mult:2  },
+    { name:'Golden Knife',     icon:'🗡️', cost:2000,    bought:false, desc:'A legendary blade. Triple click power.',    type:'click',    mult:3  },
+    { name:'Cyber Hands',      icon:'🦾', cost:10000,   bought:false, desc:'Robot hands click so fast.',                type:'click',    mult:2  },
+    { name:'Quantum Clicks',   icon:'⚡', cost:100000,  bought:false, desc:'Clicks exist in multiple states at once.',  type:'click',    mult:5  },
+    // Seed upgrades
+    { name:'Fertilizer',       icon:'💩', cost:200,     bought:false, desc:'Seeds grow 2x faster.',                    type:'building', idx:0, mult:2 },
+    { name:'Super Seeds',      icon:'🌟', cost:2000,    bought:false, desc:'Genetically enhanced seeds. 2x output.',   type:'building', idx:0, mult:2 },
+    // Farm upgrades
+    { name:'Irrigation',       icon:'💧', cost:1000,    bought:false, desc:'Water your melons! 2x farm output.',       type:'building', idx:2, mult:2 },
+    { name:'Auto-Harvest',     icon:'🤖', cost:8000,    bought:false, desc:'Robots harvest farms. 2x output.',         type:'building', idx:2, mult:2 },
+    // Factory upgrades
+    { name:'Assembly Line',    icon:'⚙️', cost:50000,   bought:false, desc:'Streamlined production. 2x factories.',    type:'building', idx:4, mult:2 },
+    { name:'AI Optimization',  icon:'🧠', cost:300000,  bought:false, desc:'AI runs the factory. 3x output.',          type:'building', idx:4, mult:3 },
+    // Global upgrades
+    { name:'Melon Hype',       icon:'📣', cost:5000,    bought:false, desc:'All producers work 1.5x harder.',          type:'global',   mult:1.5 },
+    { name:'Melon Religion',   icon:'🙏', cost:50000,   bought:false, desc:'Everyone worships melons. 2x everything.', type:'global',   mult:2 },
+    { name:'Melon Dimension',  icon:'🌈', cost:500000,  bought:false, desc:'A whole dimension of melons. 3x all.',     type:'global',   mult:3 },
+    { name:'Infinite Melon',   icon:'♾️', cost:5000000, bought:false, desc:'Melons that create melons. 5x all.',       type:'global',   mult:5 },
+    // Lab
+    { name:'DNA Splicing',     icon:'🧬', cost:200000,  bought:false, desc:'Labs produce 3x as many melons.',          type:'building', idx:5, mult:3 },
+    // Portal
+    { name:'Dimensional Rip',  icon:'🕳️', cost:2000000, bought:false, desc:'Portals pull 3x more melons through.',     type:'building', idx:7, mult:3 },
+  ],
+
+  achievements: [
+    { name:'First Slice',     icon:'🍉', desc:'Click your first watermelon.',          check:g=>g.clicks>=1 },
+    { name:'Melon Farmer',    icon:'👨‍🌾', desc:'Own 10 producers total.',               check:g=>totalOwned(g)>=10 },
+    { name:'100 Club',        icon:'💯', desc:'Harvest 100 watermelons.',               check:g=>g.totalMelons>=100 },
+    { name:'Thousand',        icon:'🌿', desc:'Harvest 1,000 watermelons.',             check:g=>g.totalMelons>=1000 },
+    { name:'Million',         icon:'💎', desc:'Harvest 1,000,000 watermelons.',         check:g=>g.totalMelons>=1e6 },
+    { name:'Billion',         icon:'🌟', desc:'Harvest 1 billion watermelons.',         check:g=>g.totalMelons>=1e9 },
+    { name:'Trillion',        icon:'🚀', desc:'Harvest 1 trillion watermelons.',        check:g=>g.totalMelons>=1e12 },
+    { name:'Click Addict',    icon:'🖱️', desc:'Click 1,000 times.',                    check:g=>g.clicks>=1000 },
+    { name:'Click Maniac',    icon:'⚡', desc:'Click 10,000 times.',                   check:g=>g.clicks>=10000 },
+    { name:'All Seeds',       icon:'🌱', desc:'Own 50 Melon Seeds.',                   check:g=>g.buildings[0].owned>=50 },
+    { name:'Melon Mogul',     icon:'🏭', desc:'Own 25 Melon Factories.',               check:g=>g.buildings[4].owned>=25 },
+    { name:'Golden Touch',    icon:'✨', desc:'Click a golden watermelon.',            check:g=>g.goldenClicks>=1 },
+    { name:'Upgrade Hoarder', icon:'🗄️', desc:'Buy 10 upgrades.',                     check:g=>g.upgrades.filter(u=>u.bought).length>=10 },
+    { name:'Melon Lord',      icon:'👑', desc:'Own every type of producer.',           check:g=>g.buildings.every(b=>b.owned>=1) },
+    { name:'Quadrillion',     icon:'🌌', desc:'Harvest 1 quadrillion watermelons.',    check:g=>g.totalMelons>=1e15 },
+    { name:'Obsessed',        icon:'🍉', desc:'Harvest 1 quintillion watermelons.',    check:g=>g.totalMelons>=1e18 },
+  ],
+};
+
+function totalOwned(g){ return g.buildings.reduce((s,b)=>s+b.owned,0); }
+
+// ── NUMBER FORMAT ──
+function fmt(n){
+  if(n<1000) return Math.floor(n).toLocaleString();
+  const suffixes=['','thousand','million','billion','trillion','quadrillion','quintillion','sextillion'];
+  const tier=Math.floor(Math.log10(Math.abs(n))/3);
+  const scaled=n/Math.pow(1000,tier);
+  return scaled.toFixed(tier>1?2:1)+' '+(suffixes[tier]||'∞');
+}
+function fmtShort(n){
+  if(n<1000) return Math.floor(n).toString();
+  const suffixes=['','K','M','B','T','Qa','Qi','Sx'];
+  const tier=Math.floor(Math.log10(Math.abs(n))/3);
+  return (n/Math.pow(1000,tier)).toFixed(1)+(suffixes[tier]||'?');
+}
+
+// ── COMPUTE STATS ──
+function computeStats(){
+  // MPC
+  let mpc=1;
+  game.upgrades.forEach(u=>{
+    if(u.bought&&u.type==='click') mpc*=u.mult;
+  });
+  // global mult
+  let gMult=1;
+  game.upgrades.forEach(u=>{
+    if(u.bought&&u.type==='global') gMult*=u.mult;
+  });
+  game.mpc=mpc;
+
+  // MPS
+  let mps=0;
+  game.buildings.forEach((b,i)=>{
+    let bm=1;
+    game.upgrades.forEach(u=>{
+      if(u.bought&&u.type==='building'&&u.idx===i) bm*=u.mult;
+    });
+    mps+=b.owned*b.baseCps*bm;
+  });
+  game.mps=mps*gMult;
+}
+
+function buildingCost(b){ return Math.floor(b.baseCost*Math.pow(1.15,b.owned)); }
+
+// ── GOLDEN MELON ──
+let goldenMelon=null, goldenTimer=0, goldenEl=null;
+
+function spawnGolden(){
+  if(goldenEl) return;
+  const center=document.getElementById('center');
+  const r=center.getBoundingClientRect();
+  goldenEl=document.createElement('div');
+  goldenEl.style.cssText=`position:fixed;font-size:2.8rem;cursor:pointer;z-index:200;
+    left:${r.left+40+Math.random()*(r.width-100)}px;
+    top:${r.top+60+Math.random()*(r.height-120)}px;
+    animation:goldenPulse 0.8s ease-in-out infinite alternate;
+    filter:drop-shadow(0 0 12px gold);user-select:none;`;
+  goldenEl.textContent='✨🍉✨';
+  goldenEl.title='GOLDEN MELON! Click it!';
+  const style=document.createElement('style');
+  style.textContent='@keyframes goldenPulse{0%{transform:scale(1) rotate(-5deg)}100%{transform:scale(1.15) rotate(5deg)}}';
+  document.head.appendChild(style);
+  goldenTimer=30;
+  goldenEl.addEventListener('click',()=>{
+    const bonus=Math.max(1,game.mps)*13+777;
+    game.melons+=bonus; game.totalMelons+=bonus;
+    game.goldenClicks++;
+    showToast(`✨ Golden Melon! +${fmt(bonus)} watermelons!`);
+    spawnParticlesBurst(parseInt(goldenEl.style.left)+30, parseInt(goldenEl.style.top)+30,'#ffd700',20);
+    goldenEl.remove(); goldenEl=null;
+    checkAchievements();
+  });
+  document.body.appendChild(goldenEl);
+}
+
+// ── CLICK HANDLER ──
+document.getElementById('melon').addEventListener('click', e=>{
+  computeStats();
+  game.melons+=game.mpc;
+  game.totalMelons+=game.mpc;
+  game.clicks++;
+  spawnFloatText(e.clientX, e.clientY, '+'+fmtShort(game.mpc));
+  // click animation
+  const m=document.getElementById('melon');
+  m.classList.add('clicked');
+  setTimeout(()=>m.classList.remove('clicked'),80);
+  // seeds bounce
+  spawnMiniMelon(e.clientX,e.clientY);
+  checkAchievements();
+  updateUI();
+});
+
+// ── FLOAT TEXT ──
+function spawnFloatText(x,y,txt){
+  const el=document.createElement('div');
+  el.className='float-text';
+  el.textContent=txt;
+  el.style.left=(x-20)+'px'; el.style.top=(y-10)+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
+
+// ── MINI MELON CANVAS ──
+const mc=document.getElementById('melon-canvas');
+mc.width=window.innerWidth; mc.height=window.innerHeight;
+window.addEventListener('resize',()=>{ mc.width=window.innerWidth; mc.height=window.innerHeight; });
+const mctx=mc.getContext('2d');
+let miniMelons=[];
+
+function spawnMiniMelon(x,y){
+  for(let i=0;i<3;i++){
+    miniMelons.push({
+      x,y,
+      vx:(Math.random()-0.5)*5,
+      vy:-3-Math.random()*4,
+      life:1,
+      r:6+Math.random()*6,
+      rot:Math.random()*Math.PI*2,
+      rotV:(Math.random()-0.5)*0.3,
+    });
+  }
+}
+
+function spawnParticlesBurst(x,y,color,n){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2;
+    const spd=2+Math.random()*5;
+    miniMelons.push({x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-2,life:1,r:4,rot:0,rotV:0,color});
+  }
+}
+
+function animateCanvas(){
+  mctx.clearRect(0,0,mc.width,mc.height);
+  miniMelons.forEach(m=>{
+    m.x+=m.vx; m.y+=m.vy; m.vy+=0.18; m.life-=0.025; m.rot+=m.rotV;
+    mctx.save();
+    mctx.globalAlpha=m.life;
+    mctx.translate(m.x,m.y); mctx.rotate(m.rot);
+    if(m.color){
+      mctx.fillStyle=m.color;
+      mctx.beginPath(); mctx.arc(0,0,m.r,0,Math.PI*2); mctx.fill();
+    } else {
+      // tiny melon
+      mctx.fillStyle='#2d7a2d';
+      mctx.beginPath(); mctx.arc(0,0,m.r,0,Math.PI*2); mctx.fill();
+      mctx.fillStyle='#e8453c';
+      mctx.beginPath(); mctx.arc(0,0,m.r*0.75,0,Math.PI*2); mctx.fill();
+      mctx.fillStyle='#1a1a0a';
+      mctx.fillRect(-1,-2,2,4);
+    }
+    mctx.restore();
+  });
+  miniMelons=miniMelons.filter(m=>m.life>0);
+  requestAnimationFrame(animateCanvas);
+}
+animateCanvas();
+
+// ── TOAST ──
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._tm);
+  t._tm=setTimeout(()=>t.style.opacity='0',2800);
+}
+
+// ── BUILD UI ──
+function buildUpgradesUI(){
+  const grid=document.getElementById('upgrades-grid');
+  grid.innerHTML='';
+  game.upgrades.forEach((u,i)=>{
+    if(u.bought) return;
+    const btn=document.createElement('div');
+    btn.className='upgrade-btn'+(game.melons>=u.cost?' affordable':'');
+    btn.innerHTML=`${u.icon}<div class="tooltip"><b>${u.name}</b><br>${u.desc}<br><span style="color:var(--gold)">Cost: ${fmt(u.cost)} 🍉</span></div>`;
+    btn.addEventListener('click',()=>{
+      if(game.melons>=u.cost&&!u.bought){
+        game.melons-=u.cost; u.bought=true;
+        showToast(`🌟 Bought: ${u.name}!`);
+        computeStats(); buildUpgradesUI(); buildBuildingsUI(); updateUI();
+        checkAchievements();
+      }
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function buildBuildingsUI(){
+  const list=document.getElementById('buildings-list');
+  list.innerHTML='';
+  game.buildings.forEach((b,i)=>{
+    const cost=buildingCost(b);
+    const can=game.melons>=cost;
+    let bMult=1;
+    game.upgrades.forEach(u=>{ if(u.bought&&u.type==='building'&&u.idx===i) bMult*=u.mult; });
+    let gMult=1;
+    game.upgrades.forEach(u=>{ if(u.bought&&u.type==='global') gMult*=u.mult; });
+    const cps=(b.baseCps*bMult*gMult*b.owned).toFixed(1);
+
+    const el=document.createElement('div');
+    el.className='building'+(can?' affordable':' cant-afford');
+    el.innerHTML=`
+      <div class="b-icon">${b.icon}</div>
+      <div class="b-info">
+        <div class="b-name">${b.name}</div>
+        <div class="b-desc">${b.desc}</div>
+        <div class="b-cost">🍉 ${fmt(cost)}</div>
+        <div class="b-cps">${cps}/sec total</div>
+      </div>
+      <div class="b-owned">${b.owned}</div>
+      <div class="b-tooltip">
+        <b>${b.icon} ${b.name}</b><br>
+        Owned: <b>${b.owned}</b><br>
+        Each produces: <b>${(b.baseCps*bMult*gMult).toFixed(2)}/sec</b><br>
+        Total: <b>${cps}/sec</b><br>
+        <span style="color:var(--gold)">Cost: ${fmt(cost)} 🍉</span>
+      </div>
+    `;
+    el.addEventListener('click',()=>{
+      const c=buildingCost(b);
+      if(game.melons>=c){
+        game.melons-=c; b.owned++;
+        computeStats(); buildBuildingsUI(); buildUpgradesUI(); updateUI();
+        checkAchievements();
+      }
+    });
+    list.appendChild(el);
+  });
+
+  // Achievements bar at bottom
+  let achBar=document.getElementById('achievements-bar');
+  if(!achBar){ achBar=document.createElement('div'); achBar.id='achievements-bar'; list.appendChild(achBar); }
+}
+
+function buildAchievementsUI(){
+  const bar=document.getElementById('achievements-bar');
+  bar.innerHTML='';
+  game.achievements.forEach(a=>{
+    const el=document.createElement('div');
+    el.className='ach'+(a.earned?' earned':'');
+    el.innerHTML=`${a.icon}<div class="ach-tip"><b>${a.name}</b><br>${a.desc}</div>`;
+    bar.appendChild(el);
+  });
+}
+
+function buildMilestonesUI(){
+  const ms=document.getElementById('milestones');
+  // keep header
+  while(ms.children.length>1) ms.removeChild(ms.lastChild);
+  const milestones=[
+    {n:1,icon:'🍉',label:'1st melon'},
+    {n:1000,icon:'🌿',label:'1K melons'},
+    {n:1e6,icon:'💎',label:'1M melons'},
+    {n:1e9,icon:'🌟',label:'1B melons'},
+    {n:1e12,icon:'🚀',label:'1T melons'},
+    {n:1e15,icon:'🌌',label:'1Qa melons'},
+  ];
+  milestones.forEach(m=>{
+    const el=document.createElement('div');
+    el.className='milestone'+(game.totalMelons>=m.n?' unlocked':'');
+    el.innerHTML=`<span class="mi-icon">${m.icon}</span>${m.label}`;
+    ms.appendChild(el);
+  });
+}
+
+// ── ACHIEVEMENTS ──
+function checkAchievements(){
+  let newEarned=false;
+  game.achievements.forEach(a=>{
+    if(!a.earned&&a.check(game)){
+      a.earned=true; newEarned=true;
+      showToast(`🏆 Achievement: ${a.name}!`);
+    }
+  });
+  if(newEarned) buildAchievementsUI();
+}
+
+// ── UPDATE UI ──
+function updateUI(){
+  document.getElementById('wm-count').textContent=fmt(game.melons);
+  document.getElementById('wm-per-sec').textContent=fmt(game.mps)+' per second';
+  document.getElementById('wm-per-click-label').textContent=fmt(game.mpc)+' per click';
+  document.getElementById('stat-total').textContent=fmt(game.totalMelons);
+  document.getElementById('stat-clicks').textContent=game.clicks.toLocaleString();
+  document.getElementById('stat-run').textContent=fmt(game.melons);
+  document.getElementById('stat-golden').textContent=game.goldenClicks;
+  document.getElementById('sb-best').textContent=fmt(bestTotal());
+  buildMilestonesUI();
+  // re-evaluate affordability on buildings & upgrades without full rebuild
+  document.querySelectorAll('.building').forEach((el,i)=>{
+    if(!game.buildings[i]) return;
+    const can=game.melons>=buildingCost(game.buildings[i]);
+    el.classList.toggle('affordable',can);
+    el.classList.toggle('cant-afford',!can);
+  });
+  document.querySelectorAll('.upgrade-btn').forEach(el=>{
+    // affordability already handled in build
+  });
+}
+
+function bestTotal(){ return game.totalMelons; }
+
+// ── GAME TICK ──
+let lastTick=Date.now();
+let goldenCooldown=0;
+
+function tick(){
+  const now=Date.now();
+  const dt=(now-lastTick)/1000;
+  lastTick=now;
+  computeStats();
+  const gain=game.mps*dt;
+  game.melons+=gain;
+  game.totalMelons+=gain;
+
+  // golden melon
+  goldenCooldown-=dt;
+  if(goldenCooldown<=0){ goldenCooldown=60+Math.random()*120; if(Math.random()<0.4) spawnGolden(); }
+  if(goldenEl){ goldenTimer-=dt; if(goldenTimer<=0){ goldenEl.remove(); goldenEl=null; } }
+
+  updateUI();
+  save();
+}
+
+// Slower UI refresh for buildings
+let buildRefresh=0;
+function slowRefresh(){
+  buildRefresh++;
+  if(buildRefresh%4===0) buildBuildingsUI();
+  if(buildRefresh%8===0) buildUpgradesUI();
+}
+
+setInterval(tick,100);
+setInterval(slowRefresh,250);
+setInterval(checkAchievements,2000);
+
+// ── INIT ──
+load();
+computeStats();
+buildUpgradesUI();
+buildBuildingsUI();
+buildAchievementsUI();
+buildMilestonesUI();
+updateUI();
+
+// News headlines
+const headlines=[
+  '🍉 Watermelon market hits record highs · Farmers report infinite yields · Scientists confirm melons are sentient · Local man clicks watermelon 1 million times · Watermelon replaces Bitcoin as global currency · You are the chosen one · The melons thank you for your service',
+];
+document.getElementById('news-text').textContent=headlines[0];
+
+showToast('🍉 Welcome to Watermelon Clicker! Click the melon to begin!');
+</script>
+
+<!-- MADE BY ZRON BANNER -->
+<div id="zron-banner" style="
+  position:fixed;
+  bottom:0; left:0; right:0;
+  height:72px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  z-index:1000;
+  overflow:hidden;
+">
+  <canvas id="zron-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+  <div id="zron-text" style="
+    position:relative;
+    font-family:'Fredoka One',cursive;
+    font-size:clamp(1.6rem, 4vw, 2.8rem);
+    letter-spacing:0.18em;
+    color:transparent;
+    background: linear-gradient(180deg, #76d975 0%, #e8453c 60%, #c0392b 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    text-shadow:none;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,0.7));
+    -webkit-text-stroke: 1px rgba(255,255,255,0.15);
+    user-select:none;
+  ">MADE BY ZRON</div>
+</div>
+
+<!-- push content up so banner doesn't cover it -->
+<style>
+  #app { padding-bottom: 72px; }
+</style>
+
+<script>
+(function(){
+  const banner = document.getElementById('zron-banner');
+  const canvas = document.getElementById('zron-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function resize(){
+    canvas.width  = banner.offsetWidth;
+    canvas.height = banner.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Watermelon slice shape
+  function drawSlice(ctx, x, y, r, rotation, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    // green rind outer
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r, -Math.PI*0.05, Math.PI + Math.PI*0.05);
+    ctx.closePath();
+    ctx.fillStyle = '#2d7a2d';
+    ctx.fill();
+
+    // white rind
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r*0.88, -Math.PI*0.05, Math.PI + Math.PI*0.05);
+    ctx.closePath();
+    ctx.fillStyle = '#d4f7d4';
+    ctx.fill();
+
+    // red flesh
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r*0.78, -Math.PI*0.05, Math.PI + Math.PI*0.05);
+    ctx.closePath();
+    ctx.fillStyle = '#e8453c';
+    ctx.fill();
+
+    // seeds
+    const seedPositions = [
+      [r*0.25, -r*0.25], [-r*0.25, -r*0.22],
+      [r*0.5,  -r*0.18], [-r*0.48, -r*0.2],
+      [r*0.1,  -r*0.45],
+    ];
+    ctx.fillStyle = '#1a1a0a';
+    seedPositions.forEach(([sx, sy])=>{
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate(0.4);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r*0.055, r*0.1, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // highlight
+    ctx.beginPath();
+    ctx.arc(-r*0.25, -r*0.3, r*0.22, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // Slices array
+  const slices = [];
+  const COUNT = 18;
+
+  function makeSlice(){
+    return {
+      x: Math.random() * (canvas.width || 800),
+      y: -30 - Math.random() * 80,
+      r: 12 + Math.random() * 20,
+      vy: 0.4 + Math.random() * 0.9,
+      vx: (Math.random() - 0.5) * 0.5,
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.04,
+      alpha: 0.55 + Math.random() * 0.35,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.02 + Math.random() * 0.02,
+    };
+  }
+
+  for(let i = 0; i < COUNT; i++){
+    const s = makeSlice();
+    s.y = Math.random() * (canvas.height || 72); // start scattered
+    slices.push(s);
+  }
+
+  function animate(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // dark semi-transparent background
+    ctx.fillStyle = 'rgba(10,31,10,0.88)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // green stripe accents
+    ctx.fillStyle = 'rgba(45,122,45,0.25)';
+    ctx.fillRect(0, 0, canvas.width, 3);
+    ctx.fillRect(0, canvas.height-3, canvas.width, 3);
+
+    slices.forEach(s => {
+      s.y += s.vy;
+      s.x += s.vx + Math.sin(s.wobble) * 0.3;
+      s.rot += s.rotV;
+      s.wobble += s.wobbleSpeed;
+
+      if(s.y - s.r > canvas.height + 10){
+        Object.assign(s, makeSlice());
+      }
+
+      drawSlice(ctx, s.x, s.y, s.r, s.rot, s.alpha);
+    });
+
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+</script>
+</body>
+</html>
